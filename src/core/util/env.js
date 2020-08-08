@@ -72,8 +72,11 @@ export const nextTick = (function () {
 
   function nextTickHandler () {
     pending = false
+    // 克隆回调函数数组
     const copies = callbacks.slice(0)
+    // 将callbacks数组置为空数组
     callbacks.length = 0
+    // 遍历执行回调函数数组中的每一个回调函数
     for (let i = 0; i < copies.length; i++) {
       copies[i]()
     }
@@ -120,9 +123,12 @@ export const nextTick = (function () {
 
   return function queueNextTick (cb?: Function, ctx?: Object) {
     let _resolve
+    // 把 cb 加上异常处理存入 callbacks 数组中
     callbacks.push(() => {
       if (cb) {
         try {
+          // 如果存在cb
+          // 将cb的this指向ctx，并调用 cb()
           cb.call(ctx)
         } catch (e) {
           handleError(e, ctx, 'nextTick')
@@ -137,6 +143,7 @@ export const nextTick = (function () {
     }
     // $flow-disable-line
     if (!cb && typeof Promise !== 'undefined') {
+      // 返回 promise 对象
       return new Promise((resolve, reject) => {
         _resolve = resolve
       })

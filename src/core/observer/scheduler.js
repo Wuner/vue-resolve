@@ -126,6 +126,7 @@ function callActivatedHooks (queue) {
  */
 export function queueWatcher (watcher: Watcher) {
   const id = watcher.id
+  // 防止watcher对象被重复处理
   if (has[id] == null) {
     has[id] = true
     if (!flushing) {

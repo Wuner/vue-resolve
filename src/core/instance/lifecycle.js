@@ -195,6 +195,7 @@ export function mountComponent (
     }
   }
 
+  // 创建渲染 Watcher，expOrFn 为 updateComponent
   vm._watcher = new Watcher(vm, updateComponent, noop)
   hydrating = false
 

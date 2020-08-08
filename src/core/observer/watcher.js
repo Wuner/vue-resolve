@@ -71,6 +71,8 @@ export default class Watcher {
     if (typeof expOrFn === 'function') {
       this.getter = expOrFn
     } else {
+      // expOrFn 是字符串的时候，例如 watch: { 'person.name': function... }
+      // parsePath('person.name') 返回一个函数获取 person.name 的值
       this.getter = parsePath(expOrFn)
       if (!this.getter) {
         this.getter = function () {}
@@ -82,6 +84,8 @@ export default class Watcher {
         )
       }
     }
+    // 渲染watcher时，立即执行
+    // 用户watcher时，延迟执行
     this.value = this.lazy
       ? undefined
       : this.get()
@@ -95,6 +99,7 @@ export default class Watcher {
     let value
     const vm = this.vm
     try {
+      // 将getter函数的this指向vue，并赋值给value
       value = this.getter.call(vm, vm)
     } catch (e) {
       if (this.user) {
@@ -119,6 +124,7 @@ export default class Watcher {
    */
   addDep (dep: Dep) {
     const id = dep.id
+    // 判断是否已经存在dep，不存在则添加watcher对象
     if (!this.newDepIds.has(id)) {
       this.newDepIds.add(id)
       this.newDeps.push(dep)

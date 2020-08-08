@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>observe</title>
+</head>
+<body>
+  <div id="app">
+    {{ arr }}
+  </div>
+
+  <script src="../../dist/vue.js"></script>
+  <script>
+    const vm = new Vue({
+      el: '#app',
+      data: {
+        arr: [2, 3, 5]
+      }
+    })
+
+    // 在浏览器控制台分别执行下面的代码
+    // 会更新视图
+    // vm.arr.push(8)
+    // 数据已改变，但不会更新视图
+    // vm.arr[0] = 100
+    // 将数组清空，也不会更新视图
+    // vm.arr.length = 0
+    // 将数组第一位删除，并重新赋值为100，这时会更新视图
+    // vm.arr.splice(0,1,100)
+
+  </script>
+</body>
+</html>

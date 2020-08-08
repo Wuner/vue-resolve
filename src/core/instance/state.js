@@ -50,9 +50,12 @@ export function initState (vm: Component) {
   const opts = vm.$options
   if (opts.props) initProps(vm, opts.props)
   if (opts.methods) initMethods(vm, opts.methods)
+  // 判断options中是否存在data属性
   if (opts.data) {
+    // 如果存在data属性，则给其添加响应式
     initData(vm)
   } else {
+    // 如果不存在data属性，则给给vue对象，添加_data属性，初始化为空对象，并给其添加响应式
     observe(vm._data = {}, true /* asRootData */)
   }
   if (opts.computed) initComputed(vm, opts.computed)
@@ -109,9 +112,13 @@ function initProps (vm: Component, propsOptions: Object) {
 
 function initData (vm: Component) {
   let data = vm.$options.data
+  // 判断data是否是函数，如果是一个函数，则是组件中的data，将其this指向vue
+  // 不是函数，则判断是否存在。不存在则赋值为空对象
   data = vm._data = typeof data === 'function'
     ? getData(data, vm)
     : data || {}
+  // 判断data是否是[object Object]，如果不是，则将data赋值为空对象
+  // 并在非production环境下，抛出警告
   if (!isPlainObject(data)) {
     data = {}
     process.env.NODE_ENV !== 'production' && warn(
@@ -121,12 +128,14 @@ function initData (vm: Component) {
     )
   }
   // proxy data on instance
+  // 获取data的所有key值
   const keys = Object.keys(data)
   const props = vm.$options.props
   const methods = vm.$options.methods
   let i = keys.length
   while (i--) {
     const key = keys[i]
+    // 在非production环境下，判断是否与methods里的方法存在同名，存在则抛出警告
     if (process.env.NODE_ENV !== 'production') {
       if (methods && hasOwn(methods, key)) {
         warn(
@@ -135,6 +144,7 @@ function initData (vm: Component) {
         )
       }
     }
+    // 在非production环境下，判断是否与props里的属性存在同名，存在则抛出警告
     if (props && hasOwn(props, key)) {
       process.env.NODE_ENV !== 'production' && warn(
         `The data property "${key}" is already declared as a prop. ` +
@@ -142,10 +152,13 @@ function initData (vm: Component) {
         vm
       )
     } else if (!isReserved(key)) {
+      // 如果key的第一个字符不是$或者_，为其设置代理
       proxy(vm, `_data`, key)
     }
   }
   // observe data
+  // 将data转换为响应式数据
+  // true：告诉observe函数，其为根属性data
   observe(data, true /* asRootData */)
 }
 
