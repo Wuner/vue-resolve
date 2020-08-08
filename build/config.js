@@ -24,7 +24,10 @@ const weexFactoryPlugin = {
   }
 }
 
+// 根据别名从别名列表中取对应的输入文件绝对路径
 const aliases = require('./alias')
+
+// 将文件路径转换为绝对路径
 const resolve = p => {
   const base = p.split('/')[0]
   if (aliases[base]) {
@@ -34,6 +37,7 @@ const resolve = p => {
   }
 }
 
+// 获取入口和出口文件的绝对路径
 const builds = {
   // Runtime only (CommonJS). Used by bundlers e.g. Webpack & Browserify
   'web-runtime-cjs': {
@@ -167,8 +171,9 @@ const builds = {
     external: Object.keys(require('../packages/weex-template-compiler/package.json').dependencies)
   }
 }
-
 function genConfig (name) {
+  // 根据环境变量 TARGET(name) 获取配置信息
+  // 获取生成配置的信息
   const opts = builds[name]
   const config = {
     input: opts.entry,
@@ -204,10 +209,12 @@ function genConfig (name) {
 
   return config
 }
-
+// 判断环境变量是否有 TARGET
+// 如果有的话 使用 genConfig() 生成 rollup 配置文件
 if (process.env.TARGET) {
   module.exports = genConfig(process.env.TARGET)
 } else {
+  // 否则获取全部配置
   exports.getBuild = genConfig
   exports.getAllBuilds = () => Object.keys(builds).map(genConfig)
 }
