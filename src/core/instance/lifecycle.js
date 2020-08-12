@@ -48,7 +48,7 @@ export function initLifecycle (vm: Component) {
 
 export function lifecycleMixin (Vue: Class<Component>) {
   // _update 方法的作用是把 VNode 渲染成真实的 DOM
-  // 首次渲染会调用，数据更新会调用
+  // 首次渲染和数据更新都会调用_update
   Vue.prototype._update = function (vnode: VNode, hydrating?: boolean) {
     const vm: Component = this
     if (vm._isMounted) {
@@ -61,8 +61,11 @@ export function lifecycleMixin (Vue: Class<Component>) {
     vm._vnode = vnode
     // Vue.prototype.__patch__ is injected in entry points
     // based on the rendering backend used.
+    // 如果当前vue实例不存在vnode，则代表是首次渲染
     if (!prevVnode) {
       // initial render
+      // 这时使用vm.__patch__方法传入真实DOM(vm.$el)，并转换为虚拟DOM，与传入的vnode进行比较
+      // 返回真实DOM赋值给vm.$el
       vm.$el = vm.__patch__(
         vm.$el, vnode, hydrating, false /* removeOnly */,
         vm.$options._parentElm,
@@ -73,6 +76,8 @@ export function lifecycleMixin (Vue: Class<Component>) {
       vm.$options._parentElm = vm.$options._refElm = null
     } else {
       // updates
+      // 使用vm.__patch__方法传入新旧vnode进行比较
+      // 返回真实DOM赋值给vm.$el
       vm.$el = vm.__patch__(prevVnode, vnode)
     }
     activeInstance = prevActiveInstance
