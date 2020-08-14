@@ -28,6 +28,7 @@ export class CodegenState {
     const isReservedTag = options.isReservedTag || no
     this.maybeComponent = (el: ASTElement) => !isReservedTag(el.tag)
     this.onceId = 0
+    // 存储静态根节点生成的代码
     this.staticRenderFns = []
   }
 }
@@ -41,15 +42,19 @@ export function generate (
   ast: ASTElement | void,
   options: CompilerOptions
 ): CodegenResult {
+  // CodegenState 代码生成过程中使用的状态对象
   const state = new CodegenState(options)
+  // 如果存在ast，生成代码，否则返回_c("div")
   const code = ast ? genElement(ast, state) : '_c("div")'
   return {
     render: `with(this){return ${code}}`,
+    // 静态渲染函数，即静态根节点的渲染函数
     staticRenderFns: state.staticRenderFns
   }
 }
 
 export function genElement (el: ASTElement, state: CodegenState): string {
+  // el.staticProcessed用于判断当前静态根节点是否已处理，防止重复处理
   if (el.staticRoot && !el.staticProcessed) {
     return genStatic(el, state)
   } else if (el.once && !el.onceProcessed) {
@@ -58,18 +63,23 @@ export function genElement (el: ASTElement, state: CodegenState): string {
     return genFor(el, state)
   } else if (el.if && !el.ifProcessed) {
     return genIf(el, state)
+    // 以下处理非静态节点
   } else if (el.tag === 'template' && !el.slotTarget) {
     return genChildren(el, state) || 'void 0'
   } else if (el.tag === 'slot') {
     return genSlot(el, state)
   } else {
     // component or element
+    // 处理组件和内置标签
     let code
     if (el.component) {
       code = genComponent(el.component, el, state)
     } else {
+      // 生成元素的属性/指令/事件等
+      // 处理各种指令，包括genDirective(model/text/html)
       const data = el.plain ? undefined : genData(el, state)
 
+      // 将节点转换为相应的代码
       const children = el.inlineTemplate ? null : genChildren(el, state, true)
       code = `_c('${el.tag}'${
         data ? `,${data}` : '' // data
@@ -87,7 +97,9 @@ export function genElement (el: ASTElement, state: CodegenState): string {
 
 // hoist static sub-trees out
 function genStatic (el: ASTElement, state: CodegenState): string {
+  // 将状态置为已处理
   el.staticProcessed = true
+  // 将静态根节点转换为生成vnode的js代码
   state.staticRenderFns.push(`with(this){return ${genElement(el, state)}}`)
   return `_m(${state.staticRenderFns.length - 1}${el.staticInFor ? ',true' : ''})`
 }
@@ -197,6 +209,8 @@ export function genData (el: ASTElement, state: CodegenState): string {
 
   // directives first.
   // directives may mutate the el's other properties before they are generated.
+  // 首先使用指令。
+  // 指令可能会在生成el的其他属性之前对其进行突变。
   const dirs = genDirectives(el, state)
   if (dirs) data += dirs + ','
 
@@ -387,10 +401,12 @@ export function genChildren (
     ) {
       return (altGenElement || genElement)(el, state)
     }
+    // 处理数组
     const normalizationType = checkSkip
       ? getNormalizationType(children, state.maybeComponent)
       : 0
     const gen = altGenNode || genNode
+    // 将子节点转换为相应的代码
     return `[${children.map(c => gen(c, state)).join(',')}]${
       normalizationType ? `,${normalizationType}` : ''
     }`
@@ -430,22 +446,28 @@ function needsNormalization (el: ASTElement): boolean {
 
 function genNode (node: ASTNode, state: CodegenState): string {
   if (node.type === 1) {
+    // 生成元素节点代码
     return genElement(node, state)
   } if (node.type === 3 && node.isComment) {
+    // 生成注释节点代码
     return genComment(node)
   } else {
+    // 生成文本节点代码
     return genText(node)
   }
 }
 
 export function genText (text: ASTText | ASTExpression): string {
+  // _v() --> createTextVNode()
   return `_v(${text.type === 2
     ? text.expression // no need for () because already wrapped in _s()
+    // JSON.stringify(text.text) 字符串加上引号 hello -> "hello"
     : transformSpecialNewlines(JSON.stringify(text.text))
   })`
 }
 
 export function genComment (comment: ASTText): string {
+  // JSON.stringify(text.text) 字符串加上引号 hello -> "hello"
   return `_e(${JSON.stringify(comment.text)})`
 }
 

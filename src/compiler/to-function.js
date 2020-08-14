@@ -10,14 +10,18 @@ type CompiledFunctionResult = {
 
 function createFunction (code, errors) {
   try {
+    // 将字符串形式的js代码，转换为函数
     return new Function(code)
   } catch (err) {
+    // 将错误进行收集
     errors.push({ err, code })
+    // 返回空函数
     return noop
   }
 }
 
 export function createCompileToFunctionFn (compile: Function): Function {
+  // 通过闭包缓存编译之后的结果
   const cache: {
     [key: string]: CompiledFunctionResult;
   } = Object.create(null)
@@ -27,7 +31,9 @@ export function createCompileToFunctionFn (compile: Function): Function {
     options?: CompilerOptions,
     vm?: Component
   ): CompiledFunctionResult {
+    // 为了防止污染，这边克隆了一份options
     options = extend({}, options)
+    // 在非生产环境中，收集错误日志
     const warn = options.warn || baseWarn
     delete options.warn
 
@@ -50,6 +56,12 @@ export function createCompileToFunctionFn (compile: Function): Function {
     }
 
     // check cache
+    // delimiters完整版的vue才有，只有在编译的时候才会使用到，
+    // 作用是改变差值表达式使用的符号
+    // https://cn.vuejs.org/v2/api/#delimiters
+
+    // 读取缓存中的 CompiledFunctionResult 对象，
+    // 如果有直接返回缓存中的CompiledFunctionResult 对象
     const key = options.delimiters
       ? String(options.delimiters) + template
       : template
@@ -58,6 +70,7 @@ export function createCompileToFunctionFn (compile: Function): Function {
     }
 
     // compile
+    // 把模板编译为编译对象(render, staticRenderFns)，字符串形式的js代码
     const compiled = compile(template, options)
 
     // check compilation errors/tips
@@ -77,6 +90,7 @@ export function createCompileToFunctionFn (compile: Function): Function {
     // turn code into functions
     const res = {}
     const fnGenErrors = []
+    // 把字符串形式的js代码转换成js函数
     res.render = createFunction(compiled.render, fnGenErrors)
     res.staticRenderFns = compiled.staticRenderFns.map(code => {
       return createFunction(code, fnGenErrors)
@@ -96,6 +110,7 @@ export function createCompileToFunctionFn (compile: Function): Function {
       }
     }
 
+    // 缓存并返回res对象(render, staticRenderFns方法)
     return (cache[key] = res)
   }
 }

@@ -14,15 +14,18 @@ import { resolveScopedSlots } from './resolve-slots'
 export function installRenderHelpers (target: any) {
   target._o = markOnce
   target._n = toNumber
+  // 将数据转换为字符串格式
   target._s = toString
   target._l = renderList
   target._t = renderSlot
   target._q = looseEqual
   target._i = looseIndexOf
+  // 用于渲染静态资源的方法
   target._m = renderStatic
   target._f = resolveFilter
   target._k = checkKeyCodes
   target._b = bindObjectProps
+  // 生成文本虚拟节点
   target._v = createTextVNode
   target._e = createEmptyVNode
   target._u = resolveScopedSlots

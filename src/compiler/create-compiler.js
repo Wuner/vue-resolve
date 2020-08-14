@@ -4,6 +4,8 @@ import { extend } from 'shared/util'
 import { detectErrors } from './error-detector'
 import { createCompileToFunctionFn } from './to-function'
 
+// baseOptions 平台相关的options
+// src/platforms/web/compiler/options.js 中定义
 export function createCompilerCreator (baseCompile: Function): Function {
   return function createCompiler (baseOptions: CompilerOptions) {
     function compile (
@@ -19,11 +21,13 @@ export function createCompilerCreator (baseCompile: Function): Function {
 
       if (options) {
         // merge custom modules
+        // 合并自定义模块
         if (options.modules) {
           finalOptions.modules =
             (baseOptions.modules || []).concat(options.modules)
         }
         // merge custom directives
+        // 合并自定义指令
         if (options.directives) {
           finalOptions.directives = extend(
             Object.create(baseOptions.directives),
@@ -31,6 +35,7 @@ export function createCompilerCreator (baseCompile: Function): Function {
           )
         }
         // copy other options
+        // 克隆其他配置
         for (const key in options) {
           if (key !== 'modules' && key !== 'directives') {
             finalOptions[key] = options[key]

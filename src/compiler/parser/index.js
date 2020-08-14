@@ -51,7 +51,7 @@ export function createASTElement (
     type: 1,
     tag,
     attrsList: attrs,
-    attrsMap: makeAttrsMap(attrs),
+    attrsMap: makeAttrsMap(attrs), // 将属性转换为key，value 形式的json对象
     parent,
     children: []
   }
@@ -59,6 +59,7 @@ export function createASTElement (
 
 /**
  * Convert HTML string to AST.
+ * 将HTML字符串转换为AST
  */
 export function parse (
   template: string,
@@ -66,14 +67,20 @@ export function parse (
 ): ASTElement | void {
   warn = options.warn || baseWarn
 
+  // 解析 options
+  // no: false
   platformIsPreTag = options.isPreTag || no
   platformMustUseProp = options.mustUseProp || no
   platformGetTagNamespace = options.getTagNamespace || no
 
+  // 根据key获取options.modules对应的数据
   transforms = pluckModuleFunction(options.modules, 'transformNode')
   preTransforms = pluckModuleFunction(options.modules, 'preTransformNode')
   postTransforms = pluckModuleFunction(options.modules, 'postTransformNode')
 
+  // delimiters完整版的vue才有，只有在编译的时候才会使用到，
+  // 作用是改变差值表达式使用的符号
+  // https://cn.vuejs.org/v2/api/#delimiters
   delimiters = options.delimiters
 
   const stack = []
@@ -101,6 +108,7 @@ export function parse (
     }
   }
 
+  // 对模板解析
   parseHTML(template, {
     warn,
     expectHTML: options.expectHTML,
@@ -108,6 +116,7 @@ export function parse (
     canBeLeftOpenTag: options.canBeLeftOpenTag,
     shouldDecodeNewlines: options.shouldDecodeNewlines,
     shouldKeepComment: options.comments,
+    // 解析过程中的回调函数，生成 AST
     start (tag, attrs, unary) {
       // check namespace.
       // inherit parent ns if there is one
@@ -119,6 +128,7 @@ export function parse (
         attrs = guardIESVGBug(attrs)
       }
 
+      // 生成AST（抽象语法树）
       let element: ASTElement = createASTElement(tag, attrs, currentParent)
       if (ns) {
         element.ns = ns
@@ -138,6 +148,10 @@ export function parse (
         element = preTransforms[i](element, options) || element
       }
 
+      // 跳过这个元素和它的子元素的编译过程。
+      // 可以用来显示原始 Mustache 标签。
+      // 跳过大量没有指令的节点会加快编译。
+      // https://cn.vuejs.org/v2/api/#v-pre
       if (!inVPre) {
         processPre(element)
         if (element.pre) {
@@ -148,16 +162,23 @@ export function parse (
         inPre = true
       }
       if (inVPre) {
+        // 处理el属性
         processRawAttrs(element)
       } else if (!element.processed) {
         // structural directives
+        // 结构化指令的处理
+        // v-for
         processFor(element)
+        // v-if
         processIf(element)
+        // v-once
         processOnce(element)
         // element-scope stuff
+        // 处理el
         processElement(element, options)
       }
 
+      // 检查根元素约束
       function checkRootConstraints (el) {
         if (process.env.NODE_ENV !== 'production') {
           if (el.tag === 'slot' || el.tag === 'template') {
@@ -176,13 +197,16 @@ export function parse (
       }
 
       // tree management
+      // 抽象语法树管理
       if (!root) {
         root = element
         checkRootConstraints(root)
       } else if (!stack.length) {
         // allow root elements with v-if, v-else-if and v-else
+        // 允许根元素带有v-if，v-else-if和v-else
         if (root.if && (element.elseif || element.else)) {
           checkRootConstraints(element)
+          // 将if语法树添加到根语法树里
           addIfCondition(root, {
             exp: element.elseif,
             block: element
@@ -197,6 +221,7 @@ export function parse (
       }
       if (currentParent && !element.forbidden) {
         if (element.elseif || element.else) {
+          // 处理if语法树
           processIfConditions(element, currentParent)
         } else if (element.slotScope) { // scoped slot
           currentParent.plain = false
@@ -221,6 +246,7 @@ export function parse (
 
     end () {
       // remove trailing whitespace
+      // 删除尾部空格
       const element = stack[stack.length - 1]
       const lastNode = element.children[element.children.length - 1]
       if (lastNode && lastNode.type === 3 && lastNode.text === ' ' && !inPre) {
@@ -232,6 +258,7 @@ export function parse (
       endPre(element)
     },
 
+    // 处理文本元素
     chars (text: string) {
       if (!currentParent) {
         if (process.env.NODE_ENV !== 'production') {
@@ -276,6 +303,7 @@ export function parse (
         }
       }
     },
+    // 处理注释元素
     comment (text: string) {
       currentParent.children.push({
         type: 3,

@@ -69,6 +69,7 @@ export function isValidArrayIndex (val: any): boolean {
 
 /**
  * Convert a value to a string that is actually rendered.
+ * 将值转换为实字符串。
  */
 export function toString (val: any): string {
   return val == null
