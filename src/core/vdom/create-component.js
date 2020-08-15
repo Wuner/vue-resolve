@@ -28,6 +28,7 @@ import {
 } from '../instance/lifecycle'
 
 // hooks to be invoked on component VNodes during patch
+// 钩子函数定义的位置（init()钩子中创建组件的实例）
 const componentVNodeHooks = {
   init (
     vnode: VNodeWithData,
@@ -36,12 +37,14 @@ const componentVNodeHooks = {
     refElm: ?Node
   ): ?boolean {
     if (!vnode.componentInstance || vnode.componentInstance._isDestroyed) {
+      // 创建组件实例挂载到 vnode.componentInstance
       const child = vnode.componentInstance = createComponentInstanceForVnode(
         vnode,
         activeInstance,
         parentElm,
         refElm
       )
+      // 调用组件对象的 $mount()，把组件挂载到页面
       child.$mount(hydrating ? vnode.elm : undefined, hydrating)
     } else if (vnode.data.keepAlive) {
       // kept-alive components, treat as a patch
@@ -96,6 +99,7 @@ const componentVNodeHooks = {
 
 const hooksToMerge = Object.keys(componentVNodeHooks)
 
+// 创建自定义组件对应的 VNode
 export function createComponent (
   Ctor: Class<Component> | Function | Object | void,
   data: ?VNodeData,
@@ -110,12 +114,15 @@ export function createComponent (
   const baseCtor = context.$options._base
 
   // plain options object: turn it into a constructor
+  // 如果Ctor不是一个构造函数，是一个对象
+  // 使用Vue.extend()创造一个子组件的构造函数
   if (isObject(Ctor)) {
     Ctor = baseCtor.extend(Ctor)
   }
 
   // if at this stage it's not a constructor or an async component factory,
   // reject.
+  // 如果在此阶段它不是构造函数或异步组件工厂，则拒绝。
   if (typeof Ctor !== 'function') {
     if (process.env.NODE_ENV !== 'production') {
       warn(`Invalid Component definition: ${String(Ctor)}`, context)
@@ -124,6 +131,7 @@ export function createComponent (
   }
 
   // async component
+  // 异步组件处理
   let asyncFactory
   if (isUndef(Ctor.cid)) {
     asyncFactory = Ctor
@@ -132,6 +140,8 @@ export function createComponent (
       // return a placeholder node for async component, which is rendered
       // as a comment node but preserves all the raw information for the node.
       // the information will be used for async server-rendering and hydration.
+      // 返回异步组件的占位符节点，该占位符呈现为注释节点，但保留该节点的所有原始信息。
+      // 该信息将用于异步服务器渲染和客户端激活。
       return createAsyncPlaceholder(
         asyncFactory,
         data,
@@ -146,14 +156,18 @@ export function createComponent (
 
   // resolve constructor options in case global mixins are applied after
   // component constructor creation
+  // 解析构造函数选项
+  // 在组件构造函数创建后合并当前组件选项和通过vue.mixin混入的选项
   resolveConstructorOptions(Ctor)
 
   // transform component v-model data into props & events
+  // 将组件v-model数据转换为props 和 events
   if (isDef(data.model)) {
     transformModel(Ctor.options, data)
   }
 
   // extract props
+  // 提取props
   const propsData = extractPropsFromVNodeData(data, Ctor, tag)
 
   // functional component
@@ -181,10 +195,14 @@ export function createComponent (
   }
 
   // merge component management hooks onto the placeholder node
+  // 合并组件的钩子函数init/prepatch/insert/destroy
+  // 准备好了data.hook中的钩子函数
   mergeHooks(data)
 
   // return a placeholder vnode
   const name = Ctor.options.name || tag
+  // 创建自定义组件的VNode，设置自定义组件的名字
+  // 记录this.componentOptions = componentOptions
   const vnode = new VNode(
     `vue-component-${Ctor.cid}${name ? `-${name}` : ''}`,
     data, undefined, undefined, undefined, context,
@@ -194,6 +212,7 @@ export function createComponent (
   return vnode
 }
 
+// 创建组件实例的位置，由自定义组件的 init() 钩子方法调用
 export function createComponentInstanceForVnode (
   vnode: any, // we know it's MountedComponentVNode but flow doesn't
   parent: any, // activeInstance in lifecycle state
@@ -213,11 +232,14 @@ export function createComponentInstanceForVnode (
     _refElm: refElm || null
   }
   // check inline-template render functions
+  // 获取inline-template
+  // 例如：<comp inline-template>xx</comp>
   const inlineTemplate = vnode.data.inlineTemplate
   if (isDef(inlineTemplate)) {
     options.render = inlineTemplate.render
     options.staticRenderFns = inlineTemplate.staticRenderFns
   }
+  // 创建组件实例
   return new vnodeComponentOptions.Ctor(options)
 }
 
@@ -225,9 +247,12 @@ function mergeHooks (data: VNodeData) {
   if (!data.hook) {
     data.hook = {}
   }
+  // 用户可以传递自定义钩子函数
+  // 把用户传入的自定义钩子函数和componentVNodeHooks中预定义的钩子函数合并
   for (let i = 0; i < hooksToMerge.length; i++) {
     const key = hooksToMerge[i]
     const fromParent = data.hook[key]
+    // 获取钩子函数（init()钩子中创建组件的实例）
     const ours = componentVNodeHooks[key]
     data.hook[key] = fromParent ? mergeHook(ours, fromParent) : ours
   }

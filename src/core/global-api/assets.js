@@ -36,7 +36,8 @@ export function initAssetRegisters (Vue: GlobalAPI) {
           definition = { bind: definition, update: definition }
         }
         // 全局注册，存储资源并赋值
-        // this.options['components']['comp'] = definition
+        // 例如：this.options['components']['comp'] = definition
+        // 当前this指向vue实例
         this.options[type + 's'][id] = definition
         return definition
       }
